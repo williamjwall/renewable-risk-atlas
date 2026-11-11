@@ -9,11 +9,12 @@
     <title>ASI Renewable Site Risk Atlas</title>
     <meta name="claude:viewport-fit-sides" content="cover" />
     <script>
-      // Apply the saved theme before first paint (no flash).
+      // Apply the saved theme before first paint (no flash); light unless chosen otherwise.
+      document.documentElement.dataset.theme = "light";
       try {
         const t = localStorage.getItem("rrisk-theme");
-        if (t === "light" || t === "dark")
-          document.documentElement.dataset.theme = t;
+        if (t === "dark") document.documentElement.dataset.theme = t;
+        else if (t === "system") delete document.documentElement.dataset.theme;
       } catch (e) {}
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -2438,9 +2439,9 @@ No job has run in this session.</pre
 
         // ================================================================ theme
         const THEMES = [
-          ["system", "Theme: System"],
           ["light", "Theme: Light"],
           ["dark", "Theme: Dark"],
+          ["system", "Theme: System"],
         ];
         function applyTheme(t) {
           if (t === "light" || t === "dark")
@@ -2448,13 +2449,12 @@ No job has run in this session.</pre
           else delete document.documentElement.dataset.theme;
           store.set("rrisk-theme-choice", t);
           try {
-            if (t === "system") localStorage.removeItem("rrisk-theme");
-            else localStorage.setItem("rrisk-theme", t);
+            localStorage.setItem("rrisk-theme", t);
           } catch (e) {}
           $("themeBtn").textContent = THEMES.find((x) => x[0] === t)[1];
           $("themeBtn").title = "Colour theme: click to change";
         }
-        let theme = store.get("rrisk-theme-choice", "system");
+        let theme = store.get("rrisk-theme-choice", "light");
         applyTheme(theme);
         $("themeBtn").onclick = () => {
           const i = THEMES.findIndex((x) => x[0] === theme);
@@ -3084,17 +3084,31 @@ No job has run in this session.</pre
         }
 
         const radius = (i) => Math.min(7, 1.5 + Math.sqrt(S.mw[i] || 0) / 5);
-        // Real site outlines (US): fetched one at a time from the live app.
+        // Real site outlines (US): fetched one at a time from the live app, or, in a
+        // static export, from the footprints/<shard>.json files written beside the page.
         const OUTLINES = {};
+        const FP_SHARDS = 256; // keep in sync with SHARDS in app/export.py
+        const fpShard = (id) => {
+          let h = 0x811c9dc5; // 32-bit FNV-1a over UTF-16 code units
+          for (let k = 0; k < id.length; k++) h = Math.imul(h ^ id.charCodeAt(k), 0x01000193) >>> 0;
+          return h % FP_SHARDS;
+        };
+        const FP_FILES = {}; // shard -> Promise of {site_id: geometry}
+        const fpFile = (b) =>
+          (FP_FILES[b] ??= api(`footprints/${b}.json`).catch((e) => {
+            delete FP_FILES[b]; // allow a retry later
+            throw e;
+          }));
         const hasOutline = (i) =>
-          LIVE && S.fpk && S.fpk[i] && !S.fpk[i].startsWith("estimated");
+          location.protocol !== "file:" && S.fpk && S.fpk[i] && !S.fpk[i].startsWith("estimated");
         async function loadOutline(i) {
           const id = S.id[i];
           if (!hasOutline(i) || id in OUTLINES) return;
           OUTLINES[id] = null; // in flight
           try {
-            const r = await api(`/api/footprint/${encodeURIComponent(id)}`);
-            OUTLINES[id] = r.geometry || false;
+            OUTLINES[id] = LIVE
+              ? (await api(`/api/footprint/${encodeURIComponent(id)}`)).geometry || false
+              : (await fpFile(fpShard(id)))[id] || false;
           } catch (e) {
             OUTLINES[id] = false; // failed: card falls back to the point view
             if (st.selected === i) renderCard();
