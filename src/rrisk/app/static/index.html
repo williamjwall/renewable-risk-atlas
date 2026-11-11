@@ -256,6 +256,9 @@
         cursor: pointer;
         font-size: 12px;
       }
+      .pillbtn .ticon {
+        flex: none;
+      }
       .pillbtn:hover {
         color: var(--ink);
         border-color: var(--ink-2);
@@ -1546,19 +1549,40 @@
 
       /* phones */
       @media (max-width: 700px) {
+        /* two rows: title + icon controls, then full-width tabs */
         .appbar {
           position: static;
         }
         .appbar-in {
-          gap: 0 12px;
-          padding-top: 8px;
+          gap: 0 10px;
+          flex-wrap: wrap;
+          min-height: 0;
+          padding-top: 10px;
         }
         .brand {
-          font-size: 16px;
+          flex: 1 1 0;
+          min-width: 0;
+          font-size: 15px;
+          line-height: 1.2;
           white-space: normal;
+          text-wrap: balance;
         }
         .appbar .right {
           order: 2;
+          margin-left: 0;
+          flex-wrap: nowrap;
+          gap: 6px;
+        }
+        #vintage,
+        .tlabel {
+          display: none;
+        }
+        #themeBtn,
+        #jobchip {
+          height: 32px;
+          min-width: 32px;
+          justify-content: center;
+          padding: 0 9px;
         }
         nav.tabs {
           order: 3;
@@ -1566,11 +1590,16 @@
           flex-wrap: nowrap;
           overflow-x: auto;
           scrollbar-width: none;
-          margin: 0 -6px;
+          margin: 6px 0 0;
+          gap: 0;
+        }
+        nav.tabs::-webkit-scrollbar {
+          display: none;
         }
         nav.tabs button {
-          padding: 12px 10px 10px;
-          flex: none;
+          flex: 1 0 auto;
+          padding: 10px 8px 9px;
+          font-size: 14px;
         }
         main {
           padding-block: 10px 32px;
@@ -2443,6 +2472,13 @@ No job has run in this session.</pre
           ["dark", "Theme: Dark"],
           ["system", "Theme: System"],
         ];
+        const svgIcon = (body) =>
+          `<svg class="ticon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">${body}</svg>`;
+        const THEME_ICONS = {
+          light: svgIcon('<circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>'),
+          dark: svgIcon('<path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1z"/>'),
+          system: svgIcon('<circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/>'),
+        };
         function applyTheme(t) {
           if (t === "light" || t === "dark")
             document.documentElement.dataset.theme = t;
@@ -2451,8 +2487,10 @@ No job has run in this session.</pre
           try {
             localStorage.setItem("rrisk-theme", t);
           } catch (e) {}
-          $("themeBtn").textContent = THEMES.find((x) => x[0] === t)[1];
-          $("themeBtn").title = "Colour theme: click to change";
+          const label = THEMES.find((x) => x[0] === t)[1];
+          $("themeBtn").innerHTML = THEME_ICONS[t] + `<span class="tlabel">${label}</span>`;
+          $("themeBtn").title = `${label}. Click to change`;
+          $("themeBtn").setAttribute("aria-label", `Colour theme: ${t}. Click to change`);
         }
         let theme = store.get("rrisk-theme-choice", "light");
         applyTheme(theme);
