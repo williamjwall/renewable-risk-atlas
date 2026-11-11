@@ -1,0 +1,5 @@
+# Copy to rrisk.toml and change what you need. Every key is optional.
+
+[app]
+host = "127.0.0.1"   # keep it local: the app has a SQL box and can run the pipeline
+port = 8765
