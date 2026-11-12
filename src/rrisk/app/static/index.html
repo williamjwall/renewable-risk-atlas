@@ -10,13 +10,13 @@
     <meta name="claude:viewport-fit-sides" content="cover" />
     <script>
       // Apply the theme before first paint (no flash): the viewer's own pick if
-      // they made one, else dark on phones and light elsewhere.
+      // they made one, else the device setting (System) on phones and light elsewhere.
       (function () {
         let t = null;
         try {
           t = localStorage.getItem("rrisk-theme-pick");
         } catch (e) {}
-        if (!t) t = matchMedia("(max-width: 700px)").matches ? "dark" : "light";
+        if (!t) t = matchMedia("(max-width: 700px)").matches ? "system" : "light";
         if (t === "system") delete document.documentElement.dataset.theme;
         else document.documentElement.dataset.theme = t === "dark" ? "dark" : "light";
       })();
@@ -2610,14 +2610,14 @@ No job has run in this session.</pre
           $("themeBtn").title = `${label}. Click to change`;
           $("themeBtn").setAttribute("aria-label", `Colour theme: ${t}. Click to change`);
         }
-        // Only an explicit pick is saved, so the default (dark on phones, light
+        // Only an explicit pick is saved, so the default (System on phones, light
         // elsewhere) follows the device until the viewer chooses.
         let theme = (() => {
           try {
             const t = localStorage.getItem("rrisk-theme-pick");
             if (THEMES.some((x) => x[0] === t)) return t;
           } catch (e) {}
-          return matchMedia("(max-width: 700px)").matches ? "dark" : "light";
+          return matchMedia("(max-width: 700px)").matches ? "system" : "light";
         })();
         applyTheme(theme);
         $("themeBtn").onclick = () => {

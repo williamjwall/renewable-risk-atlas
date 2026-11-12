@@ -20,7 +20,7 @@ uv run rrisk app          # opens http://127.0.0.1:8765 in your browser
 | **Data** | Pipeline status, **Update** (rebuilds only what changed), per-step runs with a live log |
 
 The theme button in the top bar switches Light / Dark / System (remembered per browser;
-phones start dark, everything else light).
+phones follow the device setting, everything else starts light).
 Views can be bookmarked: `http://127.0.0.1:8765/?layer=tc64&country=PHL#map`
 (`layer`, `country` as ISO-3, `tech`, `basis=global`), and `?site=<id>` opens one
 site's card: the card's **Share link** copies that link.
