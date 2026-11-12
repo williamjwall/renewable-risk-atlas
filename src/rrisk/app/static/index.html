@@ -2376,6 +2376,8 @@ No job has run in this session.</pre
           },
         };
         const TIERS = ["Low", "Moderate", "High", "Very high", "Not rated"];
+        // Every site is rated today; any that ever aren't (no weather data) stay off the map.
+        const DEFAULT_TIERS = [0, 1, 2, 3];
         const TIER_RANGE = [
           "score < 40",
           "40–69",
@@ -2650,7 +2652,8 @@ No job has run in this session.</pre
             "all") +
             !!$("countrySel").value +
             !!$("stateSel").value +
-            !!f.querySelector('#tierChips [aria-pressed="false"]') +
+            (st.tiers.size !== DEFAULT_TIERS.length ||
+              !DEFAULT_TIERS.every((t) => st.tiers.has(t))) +
             (+$("minMw").value > 0) +
             ($("basisSel").value !== "best");
           $("filtN").textContent = n ? n : "";
@@ -2694,7 +2697,7 @@ No job has run in this session.</pre
           tech: "all",
           country: "",
           state: "",
-          tiers: new Set([0, 1, 2, 3, 4]),
+          tiers: new Set(DEFAULT_TIERS),
           minMw: 0,
           q: "",
           basis: "best",
@@ -2772,9 +2775,10 @@ No job has run in this session.</pre
           );
           if ($("tierChips").childElementCount) return;
           TIERS.forEach((t, i) => {
+            if (!DEFAULT_TIERS.includes(i)) return; // no chip for Not rated
             const b = el(
               "button",
-              { type: "button", class: "chip", "aria-pressed": "true" },
+              { type: "button", class: "chip", "aria-pressed": String(st.tiers.has(i)) },
               el("span", { class: "sw", style: `background:var(--tier-${i})` }),
               t,
             );
@@ -4520,10 +4524,6 @@ No job has run in this session.</pre
                 "Score bands: Low (under 40), Moderate (40–69), High (70–89), Very high (90 and up).",
               ],
               [
-                "Not rated",
-                "No weather data covers this location. It does not mean low risk.",
-              ],
-              [
                 "Hazard index",
                 "The number the score is ranked on: how much weather the site sees compared with an average site of its type. 1.0 is average; 2.0 is twice as exposed.",
               ],
@@ -4913,7 +4913,7 @@ No job has run in this session.</pre
               el(
                 "div",
                 { class: "tierstrip" },
-                ...TIERS.map((t, i) =>
+                ...TIERS.slice(0, 4).map((t, i) =>
                   el(
                     "div",
                     {},
@@ -4930,11 +4930,6 @@ No job has run in this session.</pre
                 "p",
                 {},
                 "To see why a site scored the way it did, click it on the map. Its card lists the perils that add the most to its score.",
-              ),
-              el(
-                "p",
-                {},
-                '"Not rated" means no weather data covers that location. It does not mean the site is safe.',
               ),
             ),
             sec(
