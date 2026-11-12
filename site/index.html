@@ -592,14 +592,14 @@
       .filtbtn {
         display: none;
       }
-      #map {
+      #mapcv {
         display: block;
         width: 100%;
         aspect-ratio: 16 / 9.5;
         cursor: grab;
         touch-action: none;
       }
-      #map:active {
+      #mapcv:active {
         cursor: grabbing;
       }
       .maplegend {
@@ -686,7 +686,7 @@
         flex: 1;
         min-height: 0;
       }
-      body.mapfull #map {
+      body.mapfull #mapcv {
         aspect-ratio: auto;
         height: 100%;
         max-height: none;
@@ -1843,7 +1843,7 @@
           flex: 1;
           min-width: 0;
         }
-        #map {
+        #mapcv {
           aspect-ratio: 1 / 1;
           max-height: 72vh;
         }
@@ -2026,7 +2026,7 @@
               </div>
               <div class="mapstage">
                 <canvas
-                  id="map"
+                  id="mapcv"
                   role="img"
                   aria-label="Map of sites coloured by risk tier"
                 ></canvas>
@@ -2125,7 +2125,7 @@
         <section data-page="guide" class="page" hidden>
           <div class="guidegrid">
             <nav class="gnav" id="gnav" aria-label="Guide sections"></nav>
-            <div class="guide" id="guide"></div>
+            <div class="guide" id="guidebody"></div>
           </div>
         </section>
 
@@ -2935,7 +2935,7 @@ No job has run in this session.</pre
         // An orthographic globe. Drag rotates, scroll/pinch zooms toward the
         // pointer. Everything is re-projected each frame from `view`; raster
         // layers (satellite tiles, hazard grids) are warped on as small affine cells.
-        const canvas = $("map"),
+        const canvas = $("mapcv"),
           ctx = canvas.getContext("2d");
         const projection = d3.geoOrthographic().clipAngle(90).precision(0.3);
         const geoPath = d3.geoPath(projection, ctx);
@@ -4833,7 +4833,7 @@ No job has run in this session.</pre
             );
           };
           const exTech = ex != null ? TECH[S.tech[ex]].toLowerCase() : "";
-          $("guide").replaceChildren(
+          $("guidebody").replaceChildren(
             sec(
               "g-start",
               "Start here",
