@@ -642,7 +642,14 @@
         border-radius: 0;
         display: flex;
         flex-direction: column;
+      }
+      /* the map runs under the side column; its controls stay clear of it */
+      body.mapfull .maphead,
+      body.mapfull .maplegend {
         padding-right: calc(var(--sidew) + 2 * var(--gap));
+      }
+      body.mapfull .zoombtns {
+        right: calc(var(--sidew) + 2 * var(--gap));
       }
       body.mapfull .mapstage {
         flex: 1;
@@ -2925,6 +2932,7 @@ No job has run in this session.</pre
         let W = 0,
           H = 0,
           dpr = 1,
+          padR = 0, // px on the right covered by the full-screen side column
           base = 1, // projection scale (px per radian) at k = 1: globe fills the height
           quad = null,
           quadDirty = true;
@@ -3034,7 +3042,10 @@ No job has run in this session.</pre
           H = r.height;
           canvas.width = Math.round(W * dpr);
           canvas.height = Math.round(H * dpr);
-          base = 0.46 * Math.min(W, H);
+          // full screen: the side column covers the right, so centre the globe in what's left
+          const side = document.body.classList.contains("mapfull") && $("fullside");
+          padR = side ? side.offsetWidth + 2 * parseFloat(getComputedStyle(side).right) : 0;
+          base = 0.46 * Math.min(W - padR, H);
           draw();
         }
         const RAD = Math.PI / 180;
@@ -3043,7 +3054,7 @@ No job has run in this session.</pre
           projection
             .rotate([-view.lon, -view.lat])
             .scale(base * view.k)
-            .translate([W / 2, H / 2]);
+            .translate([(W - padR) / 2, H / 2]);
           const s0 = Math.sin(view.lat * RAD), c0 = Math.cos(view.lat * RAD);
           for (let i = 0; i < N; i++) {
             const la = S.lat[i] * RAD;
@@ -3516,7 +3527,7 @@ No job has run in this session.</pre
           const tx = Math.max(1e-7, d3.geoDistance(c, [bb[0], c[1]])),
             ty = Math.max(1e-7, d3.geoDistance(c, [c[0], bb[1]]));
           const sin = (t) => Math.sin(Math.min(t, Math.PI / 2));
-          const k = Math.min((0.45 * W) / sin(tx), (0.45 * H) / sin(ty)) / base;
+          const k = Math.min((0.45 * (W - padR)) / sin(tx), (0.45 * H) / sin(ty)) / base;
           flyTo(c[0], c[1], Math.max(1, Math.min(maxK, k)));
         }
         function zoomToVisible() {
