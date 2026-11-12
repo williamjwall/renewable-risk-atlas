@@ -7,7 +7,7 @@ query and update it.
 ## Use it
 
 ```bash
-cd ~/code/asi/renewable_us
+cd ~/code/renewable-risk-atlas
 uv run rrisk app          # opens http://127.0.0.1:8765 in your browser
 ```
 
