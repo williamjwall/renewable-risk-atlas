@@ -70,6 +70,9 @@
           "Roboto Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
         --r: 6px;
       }
+      /* Dark mode keeps every ramp's order: lighter = less, deeper = more, same as
+         light mode, so a colour means the same thing in both. Steps are lifted so
+         the deep end still clears the dark surface. */
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
           color-scheme: dark;
@@ -83,17 +86,17 @@
           --line-strong: #353d45;
           --accent: #8cbcea;
           --accent-wash: rgba(140, 188, 234, 0.12);
-          --tier-0: #8f3a1c;
-          --tier-1: #c9552a;
-          --tier-2: #ee8248;
-          --tier-3: #ffb787;
+          --tier-0: #f4b47c;
+          --tier-1: #ec8642;
+          --tier-2: #de5a2c;
+          --tier-3: #c4361f;
           --tier-4: #4a535c;
-          --haz-1: #104281;
-          --haz-2: #1c5cab;
-          --haz-3: #2a78d6;
-          --haz-4: #5598e7;
-          --haz-5: #86b6ef;
-          --haz-6: #b7d3f6;
+          --haz-1: #cfe3fb;
+          --haz-2: #a3c8f5;
+          --haz-3: #74aaee;
+          --haz-4: #4a8ce6;
+          --haz-5: #2f72d0;
+          --haz-6: #2159b0;
           --series: #3987e5;
           --solar: #f2bd4b;
           --solar-wash: rgba(242, 189, 75, 0.14);
@@ -116,17 +119,17 @@
         --line-strong: #353d45;
         --accent: #8cbcea;
         --accent-wash: rgba(140, 188, 234, 0.12);
-        --tier-0: #8f3a1c;
-        --tier-1: #c9552a;
-        --tier-2: #ee8248;
-        --tier-3: #ffb787;
+        --tier-0: #f4b47c;
+        --tier-1: #ec8642;
+        --tier-2: #de5a2c;
+        --tier-3: #c4361f;
         --tier-4: #4a535c;
-        --haz-1: #104281;
-        --haz-2: #1c5cab;
-        --haz-3: #2a78d6;
-        --haz-4: #5598e7;
-        --haz-5: #86b6ef;
-        --haz-6: #b7d3f6;
+        --haz-1: #cfe3fb;
+        --haz-2: #a3c8f5;
+        --haz-3: #74aaee;
+        --haz-4: #4a8ce6;
+        --haz-5: #2f72d0;
+        --haz-6: #2159b0;
         --series: #3987e5;
         --solar: #f2bd4b;
         --solar-wash: rgba(242, 189, 75, 0.14);
@@ -2885,7 +2888,7 @@ No job has run in this session.</pre
                 d.append(
                   el(
                     "span",
-                    { style: t === 0 || t === 4 ? "color:var(--ink)" : "" },
+                    { style: t <= 1 || t === 4 ? "color:#12171c" : "" }, // dark text on the light tiers, any theme
                     `${TIERS[t]} ${fmtInt(c)}`,
                   ),
                 );
