@@ -1069,9 +1069,6 @@
       .tablewrap.tall {
         max-height: 70vh;
       }
-      .tablewrap.list {
-        max-height: 420px;
-      }
       table.t {
         width: 100%;
         border-collapse: collapse;
@@ -1620,7 +1617,7 @@
           grid-column: 1;
         }
       }
-      /* narrow: map, then the clicked site's card, then imagery, then the list */
+      /* narrow: map, then the clicked site's card, then imagery */
       @media (max-width: 1050px) {
         .mapcol,
         .side {
@@ -1635,9 +1632,6 @@
         }
         .satpanel {
           order: 3;
-        }
-        .side > .panel:last-child {
-          order: 4;
         }
       }
 
@@ -2042,25 +2036,6 @@
                 id="card"
                 aria-live="polite"
               ></section>
-              <section class="panel">
-                <div class="panelhead">
-                  <h2>Most exposed sites</h2>
-                  <span class="m" id="listcount"></span>
-                </div>
-                <div class="tablewrap list">
-                  <table class="t">
-                    <thead>
-                      <tr>
-                        <th>Site</th>
-                        <th>Tech</th>
-                        <th class="r">MW</th>
-                        <th class="r">Score</th>
-                      </tr>
-                    </thead>
-                    <tbody id="listbody"></tbody>
-                  </table>
-                </div>
-              </section>
             </div>
           </div>
         </section>
@@ -2843,7 +2818,6 @@ No job has run in this session.</pre
           for (let i = 0; i < N; i++) if (passes(i)) visible.push(i);
           rebuildQuad();
           summary();
-          renderList();
           draw();
           if (tab === "sites") renderSites();
         }
@@ -3037,7 +3011,6 @@ No job has run in this session.</pre
             st.selected = top;
           }
           renderCard();
-          renderList();
           draw();
         }
         function resize() {
@@ -3658,7 +3631,7 @@ No job has run in this session.</pre
           );
         }
 
-        // ================================================================ list + card
+        // ================================================================ card
         const scorePill = (i) =>
           el(
             "span",
@@ -3673,50 +3646,6 @@ No job has run in this session.</pre
               scoreOf(i) == null ? "—" : fmt(scoreOf(i), 0),
             ),
           );
-        function renderList() {
-          if (!S) return;
-          const rows = visible
-            .slice()
-            .sort(
-              (a, b) =>
-                (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1) ||
-                (S.mw[b] || 0) - (S.mw[a] || 0),
-            )
-            .slice(0, 250);
-          $("listbody").replaceChildren(
-            ...rows.map((i) =>
-              el(
-                "tr",
-                {
-                  class: "click",
-                  "aria-selected": String(i === st.selected),
-                  tabindex: "0",
-                  onclick: () => select(i, true),
-                  onkeydown: (e) => {
-                    if (e.key === "Enter") select(i, true);
-                  },
-                },
-                el(
-                  "td",
-                  {},
-                  el("span", { class: "nm" }, S.name[i] || S.id[i]),
-                  el(
-                    "span",
-                    { class: "st" },
-                    [S.st[i], S.cn[i]].filter(Boolean).join(", "),
-                  ),
-                ),
-                el("td", {}, TECH[S.tech[i]] || S.tech[i]),
-                el("td", { class: "r num" }, fmt(S.mw[i], 1)),
-                el("td", { class: "r" }, scorePill(i)),
-              ),
-            ),
-          );
-          $("listcount").textContent =
-            visible.length > 250
-              ? `top 250 of ${fmtInt(visible.length)}`
-              : `${fmtInt(visible.length)} sites`;
-        }
         function contributions(i, forceUS) {
           // the same arithmetic as models/score.py: weight × min(rate / mean, cap)
           const sm = D.meta.score,
@@ -4241,11 +4170,10 @@ No job has run in this session.</pre
           st.selected = i;
           syncSiteUrl();
           renderCard();
-          renderList();
           draw();
           if (tab !== "map") setTab("map");
           if (zoomTo) flyTo(S.lon[i], S.lat[i], Math.max(view.k, 40));
-          // on a phone the list sits below the map: bring the map back up
+          // on a phone the map may be scrolled away: bring it back up
           if (zoomTo && narrow.matches && !isFull())
             document
               .querySelector(".mapwrap")
@@ -5940,7 +5868,6 @@ No job has run in this session.</pre
             st.selected = i;
             syncSiteUrl();
             renderCard();
-            renderList();
             draw();
           }
         }
