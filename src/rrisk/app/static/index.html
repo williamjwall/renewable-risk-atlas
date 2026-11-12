@@ -4175,13 +4175,51 @@ No job has run in this session.</pre
                   el("span", { class: "tag" }, S.id[i]),
                   " ",
                   el("button", { type: "button", class: "linkbtn", onclick: () => setTab("guide") }, "How is this calculated?"),
+                  " · ",
+                  el("button", { type: "button", class: "linkbtn", onclick: (e) => shareSite(i, e.currentTarget) }, "Share link"),
                 ),
               ),
             ].filter(Boolean),
           );
         }
+        // ?site=<id> opens a site's card, so any site can be linked to directly.
+        const APP_TITLE = document.title;
+        function siteUrl(i) {
+          const u = new URL(location.href);
+          u.searchParams.set("site", S.id[i]);
+          u.hash = "map";
+          return u.href;
+        }
+        function syncSiteUrl() {
+          const u = new URL(location.href),
+            i = st.selected;
+          if (i != null && S) u.searchParams.set("site", S.id[i]);
+          else u.searchParams.delete("site");
+          history.replaceState(null, "", u.pathname + u.search + u.hash);
+          document.title = i != null && S ? `${S.name[i] || S.id[i]} · ${APP_TITLE}` : APP_TITLE;
+        }
+        async function shareSite(i, btn) {
+          const url = siteUrl(i);
+          const done = (msg) => {
+            btn.textContent = msg;
+            setTimeout(() => (btn.textContent = "Share link"), 2000);
+          };
+          try {
+            if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+              await navigator.share({ title: `${S.name[i] || S.id[i]} · ${APP_TITLE}`, url });
+              return;
+            }
+            await navigator.clipboard.writeText(url);
+            done("Link copied ✓");
+          } catch (e) {
+            if (e.name === "AbortError") return; // share sheet dismissed
+            history.replaceState(null, "", url); // can't copy: leave it in the address bar
+            done("Copy the address bar");
+          }
+        }
         function select(i, zoomTo) {
           st.selected = i;
+          syncSiteUrl();
           renderCard();
           renderList();
           draw();
@@ -5889,6 +5927,7 @@ No job has run in this session.</pre
           const i = S.id.indexOf(id);
           if (i >= 0) {
             st.selected = i;
+            syncSiteUrl();
             renderCard();
             renderList();
             draw();
@@ -5907,7 +5946,7 @@ No job has run in this session.</pre
 
         // ================================================================ boot
         (async () => {
-          // Bookmarkable views: ?layer=tc64&country=PHL&tech=solar&basis=global
+          // Bookmarkable views: ?layer=tc64&country=PHL&tech=solar&basis=global&site=eia:10029
           const qs = new URLSearchParams(location.search);
           if (qs.get("layer")) st.layer = qs.get("layer");
           if (qs.get("country")) st.country = qs.get("country").toUpperCase();
@@ -5934,6 +5973,8 @@ No job has run in this session.</pre
                 ? want
                 : "map",
             );
+            const linked = qs.get("site") ? S.id.indexOf(qs.get("site")) : -1;
+            if (linked >= 0) setTimeout(() => select(linked, true), 60); // after the map has sized
           }
           if (LIVE) refreshStatus();
         })();
