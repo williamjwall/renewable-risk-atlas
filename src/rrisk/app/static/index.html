@@ -623,25 +623,33 @@
         width: 15px;
         height: 15px;
       }
-      /* full-screen map: map fills the screen, site card docks at the side */
+      /* full-screen map (desktop): the map fills the screen; the site card and its
+         satellite imagery float in an inset column on the right */
+      #fullside {
+        display: none;
+      }
       body.mapfull {
         overflow: hidden;
-        --cardw: min(380px, 40vw);
+        --sidew: clamp(340px, 30vw, 460px);
+        --gap: 14px;
       }
       body.mapfull .mapwrap {
         position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: var(--cardw);
+        inset: 0;
         z-index: 35;
         margin: 0;
+        border: 0;
         border-radius: 0;
-        border-width: 0 1px 0 0;
         display: flex;
         flex-direction: column;
-        padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom)
-          env(safe-area-inset-left);
+      }
+      /* the map runs under the side column; its controls stay clear of it */
+      body.mapfull .maphead,
+      body.mapfull .maplegend {
+        padding-right: calc(var(--sidew) + 2 * var(--gap));
+      }
+      body.mapfull .zoombtns {
+        right: calc(var(--sidew) + 2 * var(--gap));
       }
       body.mapfull .mapstage {
         flex: 1;
@@ -652,22 +660,26 @@
         height: 100%;
         max-height: none;
       }
-      body.mapfull #card {
+      body.mapfull #fullside {
+        display: grid;
+        gap: 12px;
+        align-content: start;
         position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: var(--cardw);
-        z-index: 35;
-        margin: 0;
-        border-radius: 0;
-        border-width: 0;
+        top: var(--gap);
+        right: var(--gap);
+        width: var(--sidew);
+        max-height: calc(100vh - 2 * var(--gap));
         overflow-y: auto;
         overscroll-behavior: contain;
-        align-content: start;
-        padding-top: calc(12px + env(safe-area-inset-top));
-        padding-bottom: calc(14px + env(safe-area-inset-bottom));
-        padding-right: calc(14px + env(safe-area-inset-right));
+        z-index: 36;
+        border-radius: var(--r);
+        scrollbar-width: thin;
+      }
+      body.mapfull #fullside > .panel {
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+      }
+      body.mapfull #fullside .satpair {
+        grid-template-columns: 1fr;
       }
       .side {
         display: grid;
@@ -1810,25 +1822,9 @@
           aspect-ratio: 1 / 1;
           max-height: 72vh;
         }
-        /* full screen on a phone: map on top, card as a scrolling sheet below */
-        body.mapfull {
-          --sheeth: 42dvh;
-        }
-        body.mapfull .mapwrap {
-          right: 0;
-          bottom: var(--sheeth);
-          border-width: 0 0 1px;
-          padding: env(safe-area-inset-top) env(safe-area-inset-right) 0
-            env(safe-area-inset-left);
-        }
-        body.mapfull #card {
-          top: auto;
-          left: 0;
-          width: auto;
-          height: var(--sheeth);
-          padding: 12px calc(12px + env(safe-area-inset-right))
-            calc(14px + env(safe-area-inset-bottom))
-            calc(12px + env(safe-area-inset-left));
+        /* no full-screen map on phones */
+        #zfull {
+          display: none;
         }
         .zoombtns button {
           width: 36px;
@@ -2321,6 +2317,7 @@ No job has run in this session.</pre
       </div>
     </main>
     <div id="tip" hidden></div>
+    <aside id="fullside" aria-label="Selected site"></aside>
 
     <!--__EMBED__-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
@@ -2935,6 +2932,7 @@ No job has run in this session.</pre
         let W = 0,
           H = 0,
           dpr = 1,
+          padR = 0, // px on the right covered by the full-screen side column
           base = 1, // projection scale (px per radian) at k = 1: globe fills the height
           quad = null,
           quadDirty = true;
@@ -3044,7 +3042,10 @@ No job has run in this session.</pre
           H = r.height;
           canvas.width = Math.round(W * dpr);
           canvas.height = Math.round(H * dpr);
-          base = 0.46 * Math.min(W, H);
+          // full screen: the side column covers the right, so centre the globe in what's left
+          const side = document.body.classList.contains("mapfull") && $("fullside");
+          padR = side ? side.offsetWidth + 2 * parseFloat(getComputedStyle(side).right) : 0;
+          base = 0.46 * Math.min(W - padR, H);
           draw();
         }
         const RAD = Math.PI / 180;
@@ -3053,7 +3054,7 @@ No job has run in this session.</pre
           projection
             .rotate([-view.lon, -view.lat])
             .scale(base * view.k)
-            .translate([W / 2, H / 2]);
+            .translate([(W - padR) / 2, H / 2]);
           const s0 = Math.sin(view.lat * RAD), c0 = Math.cos(view.lat * RAD);
           for (let i = 0; i < N; i++) {
             const la = S.lat[i] * RAD;
@@ -3526,7 +3527,7 @@ No job has run in this session.</pre
           const tx = Math.max(1e-7, d3.geoDistance(c, [bb[0], c[1]])),
             ty = Math.max(1e-7, d3.geoDistance(c, [c[0], bb[1]]));
           const sin = (t) => Math.sin(Math.min(t, Math.PI / 2));
-          const k = Math.min((0.45 * W) / sin(tx), (0.45 * H) / sin(ty)) / base;
+          const k = Math.min((0.45 * (W - padR)) / sin(tx), (0.45 * H) / sin(ty)) / base;
           flyTo(c[0], c[1], Math.max(1, Math.min(maxK, k)));
         }
         function zoomToVisible() {
@@ -3547,8 +3548,19 @@ No job has run in this session.</pre
           on: svgIcon('<path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/>'),
         };
         const isFull = () => document.body.classList.contains("mapfull");
+        const phone = matchMedia("(max-width: 700px)");
+        // the card and imagery move into the floating column and back again
+        const fullHomes = ["card", "satpanel"].map((id) => {
+          const n = $(id), mark = document.createComment(id);
+          n.before(mark);
+          return [n, mark];
+        });
         function setFull(on) {
+          if (on && phone.matches) on = false;
           document.body.classList.toggle("mapfull", on);
+          for (const [n, mark] of fullHomes)
+            if (on) $("fullside").append(n);
+            else mark.after(n);
           const b = $("zfull");
           b.innerHTML = FULL_ICON[on ? "on" : "off"];
           b.setAttribute("aria-pressed", on);
@@ -3568,6 +3580,7 @@ No job has run in this session.</pre
         document.addEventListener("fullscreenchange", () => {
           if (!document.fullscreenElement && isFull()) setFull(false);
         });
+        phone.addEventListener("change", () => phone.matches && isFull() && setFull(false));
         $("zin").onclick = () => flyTo(view.lon, view.lat, view.k * 1.8, 250);
         $("zout").onclick = () => flyTo(view.lon, view.lat, view.k / 1.8, 250);
         function rebuildQuad() {
